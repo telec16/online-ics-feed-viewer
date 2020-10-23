@@ -61,9 +61,8 @@ $(document).ready(function () {
 	weekNumberCalculation: 'ISO'
   });
   
-  //Expect to have name.domain/.../id/view
+  //Expect to have name.domain/view/id
   const url = document.location.toString();
-  const url_feed = url.substring(0, url.lastIndexOf('/'));
-  const cors_anywhere_url = "https://larrybolt-cors-anywhere.herokuapp.com/";
-  $.get(`${cors_anywhere_url}${url_feed}`, (res) => load_ics(res));
+  const url_feed = url.replace("view", "ics");
+  $.get(url_feed, (res) => load_ics(res));
 });
