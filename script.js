@@ -1,4 +1,3 @@
-const cors_anywhere_url = "https://larrybolt-cors-anywhere.herokuapp.com/";
 const mapping = {
   dtstart: "start",
   dtend: "end",
@@ -34,40 +33,6 @@ function load_ics(ics_data) {
   $("#calendar").fullCalendar("addEventSource", events);
 }
 
-function createShareUrl(feed, cors, title, file) {
-  if (feed) {
-    URIHash.set("feed", feed);
-  }
-  if (file) {
-    URIHash.set("file", file);
-  }
-  URIHash.set("cors", cors);
-  URIHash.set("title", title);
-  URIHash.set("hideinput", $("#share input").is(":checked"));
-  $("#share").show("slow");
-}
-function openFile(event) {
-  var input = event.target;
-  var reader = new FileReader();
-  reader.onload = function () {
-    const result = reader.result.split("base64,")[1];
-    createShareUrl(null, false, "My events", result);
-    load_ics_from_base64(result);
-  };
-  reader.readAsDataURL(input.files[0]);
-}
-
-function load_ics_from_base64(input) {
-  const contents = atob(input);
-  load_ics(contents);
-}
-
-function fetch_ics_feed(url, cors, show_share) {
-  $.get(cors ? `${cors_anywhere_url}${url}` : url, (res) => load_ics(res));
-  if (show_share) {
-    createShareUrl(url, !!cors, "My Feed");
-  }
-}
 $(document).ready(function () {
   $("#calendar").fullCalendar({
     header: {
@@ -75,49 +40,30 @@ $(document).ready(function () {
       center: "title",
       right: "month,agendaWeek,agendaDay,listMonth",
     },
+	
+	themeSystem: 'jquery-ui',
+	defaultView: 'agendaWeek',
     navLinks: true,
     editable: false,
+	
     minTime: "7:30:00",
-    maxTime: "21:30:00",
+    maxTime: "20:00:00",
+	businessHours: true,businessHours: {
+	  // days of week. an array of zero-based day of week integers (0=Sunday)
+	  daysOfWeek: [ 1, 2, 3, 4, 5 ],
+	  
+	  startTime: '08:00',
+	  endTime: '18:00'
+	},
+	
+	weekNumbers: true,
+	weekNumbersWithinDays: true,
+	weekNumberCalculation: 'ISO'
   });
-  const url_feed = URIHash.get("feed");
-  const url_file = URIHash.get("file");
-  const url_cors = URIHash.get("cors") === "true";
-  const url_title = URIHash.get("title");
-  const url_hideinput = URIHash.get("hideinput") === 'true';
-  console.log({
-    url_feed,
-    url_file,
-    url_cors,
-    url_title,
-    url_hideinput,
-  });
-  if (url_title) {
-    $("h1").text(url_title);
-  }
-  if (url_feed) {
-    url = url_feed.replace(cors_anywhere_url, "");
-    console.log(`Load ${url}`);
-    fetch_ics_feed(url, url_cors, false);
-    $("#eventsource").val(url);
-  } else if (url_file) {
-    console.log(`Load file from file`);
-    load_ics_from_base64(url_file);
-  }
-  if (url_cors) {
-    $("#cors-enabled").prop("checked", true);
-  }
-  if (url_hideinput) {
-    $("body").addClass("from_url");
-  }
-  $('#share input').click(function(){
-    if ($("#cors-enabled").is(":checked")) {
-      URIHash.set('hideinput', 'true')
-    }
-  });
-  $("#fetch").click(function () {
-    const corsAnywhereOn = $("#cors-enabled").is(":checked");
-    const url = $("#eventsource").val();
-    fetch_ics_feed(url, corsAnywhereOn, true);
-  });
+  
+  //Expect to have name.domain/.../id/view
+  const url = document.location.toString();
+  const url_feed = url.substring(0, url.lastIndexOf('/'));
+  const cors_anywhere_url = "https://larrybolt-cors-anywhere.herokuapp.com/";
+  $.get(`${cors_anywhere_url}${url_feed}`, (res) => load_ics(res));
 });
